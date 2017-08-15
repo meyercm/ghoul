@@ -7,7 +7,7 @@ defmodule Ghoul.Worker do
   # API
   ##############################
   def get_worker_for(process_key) do
-    case :gproc.lookup_pids({:n, :l, process_key}) do
+    case :gproc.lookup_pids({:n, :l, {__MODULE__, process_key}}) do
       [] -> {:error, :no_process}
       [pid] -> {:ok, pid}
     end
@@ -18,27 +18,23 @@ defmodule Ghoul.Worker do
   end
 
   def get_state(process_key) do
-    get_worker_for(process_key)
-    |> tap({:ok, pid} ~> pid)
-    |> GenServer.call(:get_state)
+    call_by_process_key(process_key, :get_state)
   end
 
   def set_state(process_key, new_state) do
-    get_worker_for(process_key)
-    |> tap({:ok, pid} ~> pid)
-    |> GenServer.call({:set_state, new_state})
+    call_by_process_key(process_key, {:set_state, new_state})
   end
 
   def reap_in(process_key, reason, delay_ms) when is_integer(delay_ms) and delay_ms >= 0 do
-    get_worker_for(process_key)
-    |> tap({:ok, pid} ~> pid)
-    |> GenServer.call({:reap_in, reason, delay_ms})
+    call_by_process_key(process_key, {:reap_in, reason, delay_ms})
   end
 
   def cancel_reap(process_key) do
-    get_worker_for(process_key)
-    |> tap({:ok, pid} ~> pid)
-    |> GenServer.call(:cancel_reap)
+    call_by_process_key(process_key, :cancel_reap)
+  end
+
+  def ttl(process_key) do
+    call_by_process_key(process_key, :ttl)
   end
 
   def stop(pid) do
@@ -47,6 +43,13 @@ defmodule Ghoul.Worker do
 
   def start_link(pid, process_key, callback, initial_state) do
     GenServer.start_link(__MODULE__, [pid, process_key, callback, initial_state])
+  end
+
+  def call_by_process_key(process_key, call_arg) do
+    case get_worker_for(process_key) do
+      {:ok, pid} -> GenServer.call(pid, call_arg)
+      error -> error
+    end
   end
 
   defmodule State do
@@ -65,17 +68,17 @@ defmodule Ghoul.Worker do
   ##############################
 
   def init([pid, process_key, callback, ghoul_state]) do
-    :gproc.reg({:n, :l, process_key})
+    :gproc.reg({:n, :l, {__MODULE__, process_key}})
     Process.monitor(pid)
     {:ok, ~M{%State process_key, pid, callback, ghoul_state}}
   end
 
   def handle_call(:get_state, _from, ~M{ghoul_state} = state) do
-    {:reply, ghoul_state, state}
+    {:reply, {:ok, ghoul_state}, state}
   end
 
-  def handle_call({:set_state, new_state}, _from, state) do
-    {:reply, :ok, %{state|ghoul_state: new_state}}
+  def handle_call({:set_state, new_state}, _from, ~M{ghoul_state} = state) do
+    {:reply, {:ok, ghoul_state}, %{state|ghoul_state: new_state}}
   end
 
   def handle_call({:reap_in, reason, delay_ms}, _from, ~M{reap_timer} = state) do
@@ -87,6 +90,14 @@ defmodule Ghoul.Worker do
   def handle_call(:cancel_reap, _from, ~M{reap_timer} = state) do
     cancel_reap_timer(reap_timer)
     {:reply, :ok, %{state|reap_timer: nil}}
+  end
+
+  def handle_call(:ttl, _from, %{reap_timer: nil} = state) do
+    {:reply, {:ok, false}, state}
+  end
+  def handle_call(:ttl, _from, ~M{reap_timer} = state) do
+    result = Process.read_timer(reap_timer)
+    {:reply, {:ok, result}, state}
   end
 
   def handle_call(:stop, _from, state) do
