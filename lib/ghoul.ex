@@ -24,4 +24,8 @@ defmodule Ghoul do
   def reap_in(process_key, reason, delay_ms) do
     Ghoul.Worker.reap_in(process_key, reason, delay_ms)
   end
+
+  def ttl(process_key) do
+    Ghoul.Worker.ttl(process_key)
+  end
 end

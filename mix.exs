@@ -7,6 +7,7 @@ defmodule Ghoul.Mixfile do
      elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     preferred_cli_env: [espec: :test],
      deps: deps()]
   end
 
@@ -21,6 +22,7 @@ defmodule Ghoul.Mixfile do
 
   defp deps do
     [
+      {:espec, "~> 1.4.5", only: :test},
       {:gproc, "~> 0.6"},
       {:pattern_tap, "~> 0.4"},
       {:shorter_maps, "~> 2.2"},

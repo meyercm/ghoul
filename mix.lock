@@ -1,4 +1,6 @@
-%{"ets_owner": {:hex, :ets_owner, "1.0.0", "f8408c609c29cb6925c2f71bac07f3e35352786b2c6824ad545f8133a4f3762d", [], [], "hexpm"},
+%{"espec": {:hex, :espec, "1.4.5", "42defe77dadd02c011281a1ee22c5e468303d2806c024e9ee9be6d18171d771f", [], [{:meck, "0.8.7", [hex: :meck, repo: "hexpm", optional: false]}], "hexpm"},
+  "ets_owner": {:hex, :ets_owner, "1.0.0", "f8408c609c29cb6925c2f71bac07f3e35352786b2c6824ad545f8133a4f3762d", [], [], "hexpm"},
   "gproc": {:hex, :gproc, "0.6.1", "4579663e5677970758a05d8f65d13c3e9814ec707ad51d8dcef7294eda1a730c", [], [], "hexpm"},
+  "meck": {:hex, :meck, "0.8.7", "ebad16ca23f685b07aed3bc011efff65fbaf28881a8adf925428ef5472d390ee", [], [], "hexpm"},
   "pattern_tap": {:hex, :pattern_tap, "0.4.0", "2760ba5b3cc4cc033458a8f6d9a3eae6410af7b2137a42383d71977e4963e980", [], [], "hexpm"},
   "shorter_maps": {:hex, :shorter_maps, "2.2.1", "65298ed203be953a6d14755aab5c9f7e365e81104315a6799f9911e93cb99364", [], [], "hexpm"}}
