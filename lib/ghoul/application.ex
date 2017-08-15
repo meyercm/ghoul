@@ -1,6 +1,4 @@
 defmodule Ghoul.Application do
-  # See http://elixir-lang.org/docs/stable/elixir/Application.html
-  # for more information on OTP Applications
   @moduledoc false
 
   use Application
@@ -10,12 +8,10 @@ defmodule Ghoul.Application do
 
     # Define workers and child supervisors to be supervised
     children = [
-      # Starts a worker by calling: Ghoul.Worker.start_link(arg1, arg2, arg3)
-      # worker(Ghoul.Worker, [arg1, arg2, arg3]),
+      supervisor(Ghoul.Worker.Supervisor, []),
+      worker(Ghoul.Watcher, []),
     ]
 
-    # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Ghoul.Supervisor]
     Supervisor.start_link(children, opts)
   end
