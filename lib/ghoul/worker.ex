@@ -1,4 +1,5 @@
 defmodule Ghoul.Worker do
+  @moduledoc false
   use GenServer
   import ShorterMaps
   use PatternTap
@@ -6,6 +7,8 @@ defmodule Ghoul.Worker do
   ##############################
   # API
   ##############################
+
+  @spec get_worker_for(Ghoul.process_key) :: {:ok, pid} | {:error, atom}
   def get_worker_for(process_key) do
     case :gproc.lookup_pids({:n, :l, {__MODULE__, process_key}}) do
       [] -> {:error, :no_process}
@@ -13,26 +16,32 @@ defmodule Ghoul.Worker do
     end
   end
 
+  @spec create(pid, Ghoul.process_key, Ghoul.on_death_callback, any) :: {:ok, pid} | {:error, atom}
   def create(pid, process_key, callback, initial_state) do
     Ghoul.Worker.Supervisor.start_child(pid, process_key, callback, initial_state)
   end
 
+  @spec get_state(Ghoul.process_key) :: {:ok, any} | {:error, atom}
   def get_state(process_key) do
     call_by_process_key(process_key, :get_state)
   end
 
+  @spec set_state(Ghoul.process_key, any) :: {:ok, any} | {:error, atom}
   def set_state(process_key, new_state) do
     call_by_process_key(process_key, {:set_state, new_state})
   end
 
+  @spec reap_in(Ghoul.process_key, atom, non_neg_integer) :: :ok | {:error, atom}
   def reap_in(process_key, reason, delay_ms) when is_integer(delay_ms) and delay_ms >= 0 do
     call_by_process_key(process_key, {:reap_in, reason, delay_ms})
   end
 
+  @spec cancel_reap(Ghoul.process_key) :: :ok | {:error, atom}
   def cancel_reap(process_key) do
     call_by_process_key(process_key, :cancel_reap)
   end
 
+  @spec ttl(Ghoul.process_key) :: {:ok, non_neg_integer} | {:error, atom}
   def ttl(process_key) do
     call_by_process_key(process_key, :ttl)
   end
@@ -53,7 +62,7 @@ defmodule Ghoul.Worker do
   end
 
   defmodule State do
-    @doc false
+    @moduledoc false
     defstruct [
       process_key: nil,
       pid: nil,

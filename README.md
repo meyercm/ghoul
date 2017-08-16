@@ -112,19 +112,74 @@ defmodule FsmExample do
 end
 ```
 
+## API
+
+#### `summon/2`
+
+Summon a Ghoul to watch a process.  When the pid terminates, the Ghoul will
+execute the function in the `on_death` option, passing in the `process_key`,
+the `reason` the pid exited, and the current `ghoul_state`.
+
+Parameters:
+
+* `process_key` - How this pid should be known to Ghoul. Will be passed to the
+  `on_death` function as the first parameter.
+* `opts` - a keyword list or map with the following options:
+  - `:pid` - which pid to have the Ghoul stalk.  Defaults to the calling pid.
+  - `:on_death` - a function to be executed after the process dies. Defaults to
+    `nil`, and nothing will be executed. Expects 3-arity function, to be
+    called as `fun.(process_key, exit_reason, ghoul_state)` by the Ghoul.
+  - `:initial_state` - the initial `ghoul_state` for this worker. Defaults to
+    `nil`. The `ghoul_state` will be passed to the `on_death` function as the
+    third parameter, and can be queried using `Ghoul.get_state/1` and changed
+    using `Ghoul.set_state/2`
+
+Return value:
+`:ok | {:error, reason}`
+
+#### `banish/1`
+
+Parameters:
+
+Return value:
+
+
+#### `get_state/1`
+
+Parameters:
+
+Return value:
+
+
+#### `set_state/2`
+
+Parameters:
+
+Return value:
+
+
+#### `reap_in/3`
+
+Parameters:
+
+Return value:
+
+
+#### `cancel_reap/1`
+
+Parameters:
+
+Return value:
+
+
+#### `ttl/1`
+
+Parameters:
+
+Return value:
+
+
 
 ## Installation
 
-Add `{:ghoul, "~> 0.1"},` to your mix deps
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `ghoul` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [{:ghoul, "~> 0.1.0"}]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at .
+Add `{:ghoul, "~> 0.1"},` to your mix deps.

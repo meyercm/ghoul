@@ -27,6 +27,19 @@ defmodule GhoulSpec do
       Process.sleep(50)
       expect :ets.lookup(@table, :summon_2) |> to(eq(summon_2: [:summon_2, :normal, :init]))
     end
+
+    it "returns ok if it works" do
+      expect Ghoul.summon(:summon_3) |> to(eq(:ok))
+    end
+
+    it "returns :error if it doesnt work" do
+      spawn(fn ->
+        Ghoul.summon(:summon_4)
+        Process.sleep(1000)
+      end)
+      Process.sleep(20)
+      expect Ghoul.summon(:summon_4, timeout_ms: 50) |> to(eq({:error, :timeout}))
+    end
   end
 
   describe "banish" do

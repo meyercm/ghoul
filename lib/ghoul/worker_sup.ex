@@ -1,4 +1,5 @@
 defmodule Ghoul.Worker.Supervisor do
+  @moduledoc false
   use Supervisor
 
   #############
