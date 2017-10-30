@@ -26,7 +26,7 @@ simple, notional example of tying an LED to the lifecycle of a particular
 GenServer:
 
 ```elixir
-defmodule LedExample do
+defmodule Led.Worker do
   use GenServer
 
   # ...snip...
@@ -37,6 +37,7 @@ defmodule LedExample do
     {:ok, %State{}}
   end
 
+  # This method will be invoked by a separate process after the GenServer dies.
   def cleanup(LedExample, _reason, _ghoul_state) do
     turn_off_led()
   end
@@ -45,21 +46,35 @@ defmodule LedExample do
 end
 ```
 
-It is important to note that `Ghoul.summon/2` will block during subsequent calls
-for a given process_key (in this example, `LedServer`) until the cleanup code
-has completed. Thus, the call to `Ghoul.summon/2` should happen **before** any
-side-effect code (e.g. `turn_on_led/0`), and any side-effect code in the cleanup
-method should be synchronous to avoid race-conditions when, e.g., a Supervisor
-restarts the GenServer in question.
+#### Important
+
+`Ghoul.summon/2` will block during subsequent calls for a given process_key (in
+this example, `LedServer`) until the cleanup code has completed. Thus, the call
+to `Ghoul.summon/2` should happen **before** any side-effect code (e.g.
+`turn_on_led/0`), and any side-effect code in the cleanup method should be
+synchronous to avoid race-conditions when, e.g., a Supervisor restarts the
+`GenServer` in question.
+
+See the [sequence diagram][led_sequence] for this example for a detailed flow
+and race condition analysis of the above example.
+
+A useful side effect of this property is being able to rate-limit how quickly a
+`GenServer` can be restarted.  Simply add `Process.sleep(time_ms)` as the last
+line of the `on_death/3` callback, and restarts of the process will be spaced
+out by `time_ms`.
 
 ### Timeout Example
 
-In this highly notional example, a GenServer managing an external server
-transitions between multiple states with varying timeout rules and cleanup
-logic.
+In this notional example, a GenServer managing an external server transitions
+between multiple states with varying timeout rules and cleanup logic.
 
 The server should boot within 100ms, initialize within 50ms, and then respond
-to a test request within 20ms
+to a test request within 20ms.
+
+Internally, our GenServer will transition from `:booting` -> `:initing` ->
+`:testing` -> `:ready`
+
+Details of the `~M` sigil can be found at the [ShorterMaps][shorter_maps] repo.
 
 ```elixir
 defmodule FsmExample do
@@ -139,47 +154,91 @@ Return value:
 
 #### `banish/1`
 
+Stop the Ghoul for a process, preventing the `on_death/3` callback from
+executing and preventing any upcoming reaping.
+
 Parameters:
 
-Return value:
+* `process_key` - the `process_key` of the Ghoul
 
+Return value:
+`:ok | {:error, reason}`
 
 #### `get_state/1`
 
+Gets the current state of a Ghoul worker, i.e. the 2nd argument for the
+`on_death/3` callback.
+
 Parameters:
+
+* `process_key` - the `process_key` of the Ghoul
 
 Return value:
 
+{:ok, state}|{:error, reason}
 
 #### `set_state/2`
 
+Sets the current state of a Ghoul worker, to be passed as the second argument
+to the `on_death/3` callback.
+
 Parameters:
+
+* `process_key` - the `process_key` of the Ghoul
 
 Return value:
 
+{:ok, state}|{:error, reason}
 
 #### `reap_in/3`
 
+Instruct the ghoul to kill the process after a delay. Each time this method is
+called for a process, previous `reap_in` directives are canceled. This lets
+the Ghoul act as a deadman switch for a process, killing it should it fail to
+progress in an expected manner.
+
 Parameters:
+
+* `process_key` - the `process_key` of the Ghoul
+* `reason` - the reason to pass to `Process.exit/2`
+* `delay_ms` - how long to wait until reaping the process.
 
 Return value:
 
+`:ok | {:error, reason}`
 
 #### `cancel_reap/1`
 
+Cancel a pending reap.
+
 Parameters:
 
-Return value:
+* `process_key` - the `process_key` of the Ghoul
 
+Return value:
+`:ok | {:error, reason}`
 
 #### `ttl/1`
 
+Query a Ghoul to see how much time remains unil a reaping.  Result is in
+milliseconds, or `false` if the process has already reaped.
+
 Parameters:
+
+* `process_key` - the `process_key` of the Ghoul
 
 Return value:
 
+`integer|false | {:error, reason}`
 
 
 ## Installation
 
 Add `{:ghoul, "~> 0.1"},` to your mix deps.
+
+
+[led_sequence]:
+design/led_sequence.svg
+
+[shorter_maps]:
+https://github.com/meyercm/shorter_maps
