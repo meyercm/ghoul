@@ -53,21 +53,28 @@ this example, `LedServer`) until the cleanup code has completed. Thus, the call
 to `Ghoul.summon/2` should happen **before** any side-effect code (e.g.
 `turn_on_led/0`), and any side-effect code in the cleanup method should be
 synchronous to avoid race-conditions when, e.g., a Supervisor restarts the
-GenServer in question.
+`GenServer` in question.
 
-See the [sequence diagram][led_sequence] for this example for a detailed flow and race
-condition analysis
+See the [sequence diagram][led_sequence] for this example for a detailed flow
+and race condition analysis of the above example.
 
-
+A useful side effect of this property is being able to rate-limit how quickly a
+`GenServer` can be restarted.  Simply add `Process.sleep(time_ms)` as the last
+line of the `on_death/3` callback, and restarts of the process will be spaced
+out by `time_ms`.
 
 ### Timeout Example
 
-In this highly notional example, a GenServer managing an external server
-transitions between multiple states with varying timeout rules and cleanup
-logic.
+In this notional example, a GenServer managing an external server transitions
+between multiple states with varying timeout rules and cleanup logic.
 
 The server should boot within 100ms, initialize within 50ms, and then respond
-to a test request within 20ms
+to a test request within 20ms.
+
+Internally, our GenServer will transition from `:booting` -> `:initing` ->
+`:testing` -> `:ready`
+
+Details of the `~M` sigil can be found at the [ShorterMaps][shorter_maps] repo.
 
 ```elixir
 defmodule FsmExample do
@@ -232,3 +239,6 @@ Add `{:ghoul, "~> 0.1"},` to your mix deps.
 
 [led_sequence]:
 design/led_sequence.svg
+
+[shorter_maps]:
+https://github.com/meyercm/shorter_maps
