@@ -10,12 +10,12 @@ defmodule Ghoul.Watcher do
     GenServer.start_link(__MODULE__, [], [name: __MODULE__])
   end
 
-  @spec summon(pid, Ghoul.process_key, Ghoul.on_death_callback, any, non_neg_integer)
+  @spec summon(pid, Ghoul.process_key, Ghoul.on_death_callback, any, non_neg_integer) :: :ok | {:error, atom}
   def summon(pid, process_key, callback, initial_state, timeout_ms) do
     GenServer.call(__MODULE__, {:summon, pid, process_key, callback, initial_state, timeout_ms}, timeout_ms + 200)
   end
 
-  @spec banish(Ghoul.process_key)
+  @spec banish(Ghoul.process_key) :: :ok | {:error, atom}
   def banish(process_key) do
     GenServer.call(__MODULE__, {:banish, process_key})
   end
@@ -45,7 +45,7 @@ defmodule Ghoul.Watcher do
         pending = Map.put(pending, worker_ref, request)
         {:noreply, ~M{state|pending}}
       {:error, :no_process} ->
-        do_summon(request)
+        {:ok, _pid} = do_summon(request)
         {:reply, :ok, state}
     end
   end
@@ -63,7 +63,7 @@ defmodule Ghoul.Watcher do
   def handle_info({:DOWN, monitor_ref, :process, _pid, _reason}, ~M{pending} = state) do
     {~M{from, timer_ref} = request, pending} = Map.pop(pending, monitor_ref)
     Process.cancel_timer(timer_ref)
-    do_summon(request)
+    {:ok, _pid} = do_summon(request)
     GenServer.reply(from, :ok)
     {:noreply, ~M{state|pending}}
   end
