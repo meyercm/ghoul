@@ -1,0 +1,54 @@
+# created with [atom-sequence-diagram](https://github.com/sharvil/atom-sequence-diagram)
+title: Led Sequence
+
+
+participant LedSup as ls
+participant Led.Worker as lw
+participant Ghoul as g
+participant Ghoul.Worker as gw
+
+note over ls: App start up
+ls -> lw: `init/1`
+lw -> g: `summon/2`
+g -> gw: `init/1`
+gw --> lw: monitor
+gw -> g: `:ok`
+g -> lw: `:ok`
+note over lw: turn_on_led()
+lw -> ls: `:ok`
+note over ls: App started
+
+note over lw: time passes...
+note over lw: ...server crashes
+#
+lw --> ls: :DOWN
+lw --> Ghoul.Worker: :DOWN
+
+note over ls, gw: Option 1: Ghoul.Worker wins race:
+note over gw: turn_off_led()
+gw --> g: :DOWN
+note over lw: new pid
+ls -> lw: `init/1`
+lw -> g: `summon/2`
+note over gw: new pid
+g -> gw: `init/1`
+gw --> lw: monitor
+gw -> g: `:ok`
+g -> lw: `:ok`
+note over lw: turn_on_led()
+lw -> ls: `:ok`
+
+note over ls, gw: Option 2: LedSup wins race:
+note over lw: new pid
+ls -> lw: `init/1`
+lw -> g: `summon/2`
+note over g: blocked until `:DOWN`
+note over gw: turn_off_led()
+gw --> g: :DOWN
+note over gw: new pid
+g -> gw: `init/1`
+gw --> lw: monitor
+gw -> g: `:ok`
+g -> lw: `:ok`
+note over lw: turn_on_led()
+lw -> ls: `:ok`
