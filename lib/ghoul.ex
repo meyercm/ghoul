@@ -61,7 +61,7 @@ defmodule Ghoul do
   end
 
   @doc """
-  Prevents a Ghoul from executing `reap_in` or `on_death` actions.
+  Stops a Ghoul, preventing `reap_in` or `on_death` actions.
 
   ### Parameters
   * `process_key` - the `process_key` of the Ghoul to terminate
@@ -74,7 +74,7 @@ defmodule Ghoul do
   Gets the current state of a Ghoul worker.
 
   ### Parameters
-  * `process_key` - the `process_key` of the Ghoul to terminate
+  * `process_key` - the `process_key` of the Ghoul to query
   """
   def get_state(process_key) do
     Ghoul.Worker.get_state(process_key)
@@ -84,7 +84,7 @@ defmodule Ghoul do
   Sets the current state of a Ghoul worker.
 
   ### Parameters
-  * `process_key` - the `process_key` of the Ghoul to terminate
+  * `process_key` - the `process_key` of the Ghoul
   * `new_state` - the new value to use as the `ghoul_state`
   """
   def set_state(process_key, new_state) do
@@ -98,9 +98,9 @@ defmodule Ghoul do
   progress in an expected manner.
 
   ### Parameters
-  * `process_key` - the `process_key` of the Ghoul to terminate
+  * `process_key` - the `process_key` of the Ghoul
   * `reason` - the reason to pass to `Process.exit/2`
-  * `delay_ms` - how long to wait until reaping the process. Any
+  * `delay_ms` - how long to wait until reaping the process.
   """
   def reap_in(process_key, reason, delay_ms) do
     Ghoul.Worker.reap_in(process_key, reason, delay_ms)
@@ -110,17 +110,18 @@ defmodule Ghoul do
   Cancel a pending reap.
 
   ### Parameters
-  * `process_key` - the `process_key` of the Ghoul to prevent termination
+  * `process_key` - the `process_key` of the Ghoul
   """
   def cancel_reap(process_key) do
     Ghoul.Worker.cancel_reap(process_key)
   end
 
   @doc """
-  Time until a process is reaped.
+  Time in millisconds until a process is reaped, or false if has already been
+  reaped.
 
   ### Parameters
-  * `process_key` - the `process_key` of the Ghoul to query
+  * `process_key` - the `process_key` of the Ghoul
   """
   def ttl(process_key) do
     Ghoul.Worker.ttl(process_key)
