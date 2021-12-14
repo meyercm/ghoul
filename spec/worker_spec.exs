@@ -1,5 +1,6 @@
 defmodule GhoulSpec do
   use ESpec
+
   @table :ghoul_spec
   before_all do
     :ets.new(@table, [:public, :named_table, :set])
@@ -9,22 +10,28 @@ defmodule GhoulSpec do
     it "executes code after a process has died" do
       :ets.insert(@table, {:summon_1, false})
       expect :ets.lookup(@table, :summon_1) |> to(eq(summon_1: false))
-      spawn(fn ->
-        Ghoul.summon(:summon_1, on_death: fn _, _, _ -> :ets.insert(@table, {:summon_1, true}) end)
-      end)
-      # now, give the process time to live, die, and have ghoul execute
+
+      fn -> Ghoul.summon(:summon_1, on_death: fn _, _, _ -> :ets.insert(@table, {:summon_1, true}) end) end
+      |> Task.async()
+      |> Task.await()
+
+      # time to let ghoul shamble in and cleanup
       Process.sleep(50)
+
       expect :ets.lookup(@table, :summon_1) |> to(eq(summon_1: true))
     end
 
     it "passes in the proper args" do
       :ets.insert(@table, {:summon_2, []})
       expect :ets.lookup(@table, :summon_2) |> to(eq(summon_2: []))
-      spawn(fn ->
-        Ghoul.summon(:summon_2, on_death: fn a, b, c -> :ets.insert(@table, {:summon_2, [a, b, c]}) end, initial_state: :init)
-      end)
-      # now, give the process time to live, die, and have ghoul execute
+
+      fn -> Ghoul.summon(:summon_2, on_death: fn a, b, c -> :ets.insert(@table, {:summon_2, [a, b, c]}) end, initial_state: :init) end
+      |> Task.async()
+      |> Task.await()
+
+      # time to let ghoul shamble in and cleanup
       Process.sleep(50)
+
       expect :ets.lookup(@table, :summon_2) |> to(eq(summon_2: [:summon_2, :normal, :init]))
     end
 
@@ -37,7 +44,10 @@ defmodule GhoulSpec do
         Ghoul.summon(:summon_4)
         Process.sleep(1000)
       end)
-      Process.sleep(20)
+
+      # time to let ghoul shamble in and cleanup
+      Process.sleep(50)
+
       expect Ghoul.summon(:summon_4, timeout_ms: 50) |> to(eq({:error, :timeout}))
     end
   end
@@ -46,12 +56,18 @@ defmodule GhoulSpec do
     it "prevents the execution of the callback" do
       :ets.insert(@table, {:banish_1, false})
       expect :ets.lookup(@table, :banish_1) |> to(eq(banish_1: false))
-      spawn(fn ->
+
+      fn ->
         Ghoul.summon(:banish_1, on_death: fn _,_,_ -> :ets.insert(@table, {:banish_1, true}) end)
         Ghoul.banish(:banish_1)
-      end)
-      # now, give the process time to live, die, and have ghoul *not* execute
+      end
+      |> Task.async()
+      |> Task.await()
+
+      # time to let ghoul shamble in and *not* cleanup
       Process.sleep(50)
+
+      # now, give the process time to live, die, and have ghoul *not* execute
       expect :ets.lookup(@table, :banish_1) |> to(eq(banish_1: false))
     end
     it "returns :ok if it succeeds" do
@@ -169,7 +185,8 @@ defmodule GhoulSpec do
       end)
       Process.sleep(100)
       {:ok, ttl} = Ghoul.ttl(:ttl_1)
-      expect ttl |> to(be_between 0, 100)
+      IO.puts("ttl: #{ttl}")
+      expect ttl |> to(be_between 0, 110)
     end
 
     it "returns false if the timer isn't set" do
