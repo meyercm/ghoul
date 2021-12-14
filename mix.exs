@@ -7,7 +7,7 @@ defmodule Ghoul.Mixfile do
   def project do
     [app: :ghoul,
      version: @version,
-     elixir: "~> 1.4",
+     elixir: "~> 1.9",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      preferred_cli_env: [espec: :test],
@@ -29,12 +29,12 @@ defmodule Ghoul.Mixfile do
 
   defp deps do
     [
-      {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
       {:ex_doc, ">= 0.0.0", only: :dev},
       {:earmark, ">= 0.0.0", only: :dev},
-      {:espec, "~> 1.4.5", only: :test},
-      {:gproc, "~> 0.6"},
+      {:espec, "~> 1.8", only: :test},
+      {:gproc, "~> 0.9"},
       {:pattern_tap, "~> 0.4"},
       {:shorter_maps, "~> 2.2"},
     ]
