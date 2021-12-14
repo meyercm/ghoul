@@ -1,29 +1,30 @@
 defmodule Ghoul.Worker.Supervisor do
   @moduledoc false
-  use Supervisor
+
+  @doc "Ghoul.Worker"
+  use DynamicSupervisor
 
   #############
   # API
   #############
 
-  def start_link do
-    Supervisor.start_link(__MODULE__, [], [name: __MODULE__])
-  end
+  def start_link([]), do: DynamicSupervisor.start_link(__MODULE__, [], name: __MODULE__)
 
   def start_child(process_key, pid, callback, initial_state) do
-    Supervisor.start_child(__MODULE__, [process_key, pid, callback, initial_state])
+    spec = %{
+      id: {Ghoul.Worker, process_key, pid, callback, initial_state},
+      start: {Ghoul.Worker, :start_link, [process_key, pid, callback, initial_state]},
+      restart: :transient
+    }
+    DynamicSupervisor.start_child(__MODULE__, spec)
   end
 
   ##############################
   # GenServer Callbacks
   ##############################
 
-  def init([]) do
-    children = [
-      worker(Ghoul.Worker, [], restart: :transient)
-    ]
-    supervise(children, strategy: :simple_one_for_one)
-  end
+  @impl DynamicSupervisor
+  def init([]), do: DynamicSupervisor.init(strategy: :one_for_one)
 
   ##############################
   # Internal

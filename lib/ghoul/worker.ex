@@ -76,48 +76,58 @@ defmodule Ghoul.Worker do
   # GenServer Callbacks
   ##############################
 
+  @impl GenServer
   def init([pid, process_key, callback, ghoul_state]) do
     :gproc.reg({:n, :l, {__MODULE__, process_key}})
     Process.monitor(pid)
     {:ok, ~M{%State process_key, pid, callback, ghoul_state}}
   end
 
+  @impl GenServer
   def handle_call(:get_state, _from, ~M{ghoul_state} = state) do
     {:reply, {:ok, ghoul_state}, state}
   end
 
+  @impl GenServer
   def handle_call({:set_state, new_state}, _from, ~M{ghoul_state} = state) do
     {:reply, {:ok, ghoul_state}, %{state|ghoul_state: new_state}}
   end
 
+  @impl GenServer
   def handle_call({:reap_in, reason, delay_ms}, _from, ~M{reap_timer} = state) do
     cancel_reap_timer(reap_timer)
     reap_timer = Process.send_after(self(), {:reap, reason}, delay_ms)
     {:reply, :ok, ~M{state|reap_timer}}
   end
 
+  @impl GenServer
   def handle_call(:cancel_reap, _from, ~M{reap_timer} = state) do
     cancel_reap_timer(reap_timer)
     {:reply, :ok, %{state|reap_timer: nil}}
   end
 
+  @impl GenServer
   def handle_call(:ttl, _from, %{reap_timer: nil} = state) do
     {:reply, {:ok, false}, state}
   end
+  @impl GenServer
   def handle_call(:ttl, _from, ~M{reap_timer} = state) do
     result = Process.read_timer(reap_timer)
     {:reply, {:ok, result}, state}
   end
 
+  @impl GenServer
   def handle_call(:stop, _from, state) do
     {:stop, :normal, :ok, state}
   end
 
+  @impl GenServer
   def handle_info({:reap, reason}, ~M{pid} = state) do
     Process.exit(pid, reason)
     {:noreply, state}
   end
 
+  @impl GenServer
   def handle_info({:DOWN, _monitor_ref, :process, pid, reason}, ~M{pid, callback, process_key, ghoul_state} = state) do
     if is_function(callback) do
       callback.(process_key, reason, ghoul_state)
